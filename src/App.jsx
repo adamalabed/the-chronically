@@ -210,7 +210,7 @@ export default function App() {
             className="text-5xl md:text-7xl font-black tracking-tight group-hover:opacity-90 transition-opacity"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
-            The Chronicle
+            The Chronically
           </h1>
           <span className={`text-xs md:text-sm font-sans tracking-widest mt-2 uppercase ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             by NISFALDAM
