@@ -1,14 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Edit3, Trash2, Plus, ArrowLeft, Lock, LogOut } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
-// --- DATABASE CONNECTION ---
-// This safely pulls your keys from the .env.local file
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// --- YOUR ARTICLES ---
+const INITIAL_ARTICLES = [
+  {
+    id: '5',
+    title: 'Perspective is Everything',
+    date: 'January 19, 2026',
+    content: 'Point is "GOOD" and "BAD" things happen to all of us. It\'s inevitable, you cannot escape it. These concepts are mutually exclusive and so incredibly complex/ intertwined to the point they almost don\'t even exist on their own. You quite literally cannot have "GOOD" without "BAD."\n\nLife is ultimately a string of experiences happening one after the other after the other. Like dominoes. But each experience happening, including the one that lead you to reading this message, was only made possible because you lived every single experience exactly the way you did prior to the one happening RIGHT NOW. Everything in your life had to happen exactly the way that it did for you to be in this very moment.\n\nRemember that next time something "GOOD" is happening, and remember that it\'s only because you experienced all of the "BAD" before that. Literally the best experience you will ever live in your life will only have been made possible because of the worst one that happened before.\n\n> Perspective is everything and a "GOOD" one will carry you through the worst imaginable pain, the most unfair circumstances, the "BAD" parts of life.\n\nWhen life is "GOOD" stay humble, grounded, slow down and when it\'s "BAD" be confident, optimistic to a delusional degree. You have the power to manipulate the bad parts into good ones, entirely. **Find the point.**'
+  },
+  {
+    id: '4',
+    title: 'The Habit of Effort vs. The Habit of Reward',
+    date: 'December 31, 2025',
+    content: 'The struggle against laziness is often misunderstood as a battle of willpower against a character flaw. However, a powerful psychological insight reframes this inertia: laziness is merely the symptom of a thinking habit that prioritizes cost over reward. Productivity, by contrast, is the result of reversing this cognitive bias, consciously focusing on the positive benefits that await us once the action is complete.\n\nThe lazy mindset is characterized by its fixation on friction. When faced with a task—whether it is writing a report or exercising—the mind immediately calculates the cost: the time, the effort, the discomfort, or the boredom. This habitual thought pattern leads to resistance, procrastination, and eventually, inaction. In neurological terms, the energy required for the task is perceived as higher than the immediate payoff, leading the brain to select avoidance.\n\nThe solution is not to grit one’s teeth through the effort, but to deliberately shift the mental lens to the outcome. This approach leverages the brain’s dopamine system, which is less concerned with effort and more focused on anticipation. By concentrating on the future reward—the sense of accomplishment, the completed project, the physical energy boost, or the clean desk—we tap into the motivational chemical that drives seeking behavior. This focus generates a constructive urgency, making the required effort a manageable means to an appealing end.\n\nUltimately, those who appear effortlessly productive are not morally superior; they have simply cultivated a **superior habit of mind**. Productivity is not the absence of effort, but the learned skill of dopamine priming, where the anticipation of a positive result becomes the fuel that overrides the discomfort of the task itself. By consistently choosing to think about the benefit first, we break the mental habit of avoidance and make meaningful action feel like the most logical step.'
+  },
+  {
+    id: '3',
+    title: 'What Rust is to Iron',
+    date: 'October 30, 2025',
+    content: '> Troubles are to man what rust is to iron.\n\nRust, a metaphor for chronic psychological stress, doesn’t manifest instantly; it develops gradually when metal is exposed to normal conditions like moisture, oxygen, or neglect.\n\nSimilarly, mental strain accumulates when individuals are exposed to reality and stressors without proper processing or rest.\n\nIn psychology, this phenomenon parallels chronic stress or rumination: minor worries that, when ignored, gradually erode emotional well-being and cognitive clarity.\n\nIron left unprotected, symbolizing neglect, rusts more rapidly.\n\nSimilarly, individuals who neglect their emotional hygiene, such as suppressing emotions, avoiding self-reflection, or overworking, become susceptible to burnout, anxiety, or depressive symptoms.\n\nPsychologically, this underscores the importance of preventive care: therapy, journaling, mindfulness, or meaningful rest act as protective measures that slow the rusting process.\n\nThis aligns with acceptance-based approaches, such as Acceptance and Commitment Therapy (ACT), which emphasize that distress doesn’t indicate personal failure but rather an interaction with reality.\n\nWhile rust cannot be removed by ignoring it, deliberate efforts like cleaning, polishing, and protection can restore the metal’s strength. Psychologically, healing operates similarly: reflection, reframing, and self-compassion don’t erase past troubles but transform the relationship one has with them.\n\nRust is a natural reaction, not a flaw in the metal. It signifies that the material has been exposed to the elements. Similarly, troubles and emotional friction are signs of being alive and engaged with the world. They serve as feedback, not a failure.'
+  },
+  {
+    id: '6',
+    title: 'Wants & Needs',
+    date: 'October 17, 2025',
+    content: 'There are endless self-improvement resolutions people make every year, month, week maybe even day – "This year is my year. I’m deleting all the socials, waking up at 5am, starting a business, taking cold showers" – all that yap.\n\nA generational cycle of temporary motivation, impulsive self-optimization and inevitable burnouts. Each wave of determination feels profound in the moment but collapses under the same weight of distraction, comfort, and unrealistic expectations.\n\n**The Central Idea**\n\nThe phrase "lock in" means to get serious, focus intensely and intensively on a goal.\n\nOn a first glance it sounds positive. Sounds like a call to discipline, focus and purpose.\n\nBut most people never actually lock in; they fantasize about it. The momentary rush of motivation – usually triggered by seeing their peers on the internet make a bunch of money or romanticize productivity – produces a burst of excitement, but not lasting results.\n\nPeople delete apps, make plans, journal, clean their rooms, organize calendars, and swear to change – but, within days, they relapse into their old habits. The cycle repeats, next time they get this rush of motivation yet again, leading to frustrations, disappointment, numbness, and self-doubt.\n\n**Oversights**\n\n**• A Missing Anchor**\n\nMost people pursue goals without a deep reason behind them. They imitate others – deciding to wake up early, get fit, or make money — but never clarify why those things truly matter to them.\n\nThe brain doesn\'t care about vague goals; it only responds strongly to needs (like food, safety, shelter) or powerful emotional motivations.\n\nWithout a compelling "why," the brain defaults to comfort and instant gratification — the easiest, fastest sources of dopamine. That’s why people give up on long-term work: their brains don’t understand the necessity of doing it.\n\nOnly when a goal becomes deeply personal — tied to identity, pain, or genuine desire — does effort become automatic.\n\nYour brain works only for the needs and not the wants, when you want something you have to work against your brain.\n\n**• Short-Term Thinking and Destroyed Attention Spans**\n\nOur culture, especially through short-form social media, has trained us to expect immediate results.\n\nPeople view focus and hard work as a quick sprint – a challenge or a detox – when in reality, meaningful goals are ultramarathons. Success comes from years of repetition and boredom, being open to things, not a single burst of motivation.\n\nThe human brain, evolved for survival, isn’t naturally built to chase long-term abstract rewards. Combined with modern digital overstimulation, this makes sustained focus nearly impossible.\n\nAs a result, people constantly chase shortcuts – new routines or productivity systems – instead of simply being consistent.\n\n**• It\'s Performative**\n\nDeclaring that you are "locked in" often becomes a substitute for actual action.\n\nPeople announce goals publicly because it feels good – it gives the brain a fake sense of progress. Posting on social media, journaling, or consuming motivational content triggers dopamine similar to genuine accomplishment, even though nothing tangible has changed.\n\nThis creates a performative self-improvement loop: people enjoy the identity of being disciplined more than the discipline itself.\n\n**• They Have Unrealistic Expectations**\n\nPeople assume that once they have this burst of focus, life will magically become smooth – as if the act of deciding to focus will summon a cinematic transformation.\n\nBut real discipline is boring, lonely, and unglamorous. Most days feel average or unproductive; breakthroughs are rare. Progress takes far longer than expected, and self-doubt is constant.\n\nConsistency matters a bit more than intensity.\n\nHuman evolution prioritized survival, not fulfillment. The brain\'s reward system pushes us to minimize pain and maximize comfort – not to chase abstract goals like building something or mastering a skill.\n\n**Conclusion**\n\nReal focus requires conscious rebellion against biology. You must treat your chosen mission as a need, not a want – something essential and vital, not optional. Otherwise, your brain will always choose the easier dopamine hit.\n\nAt its heart, this essay is a rejection of the aesthetic of self-improvement and a defense of reality.\n\n> True focus isn’t loud, cinematic, or glamorous – it’s quiet, slow, painful, and deeply human.\n\nIt demands purpose, consistency, and the willingness to be uncomfortable without immediate reward.'
+  },
+  {
+    id: '2',
+    title: 'The Quiet War of Cognitive Empathy',
+    date: 'October 5, 2025',
+    content: 'In psychology, one of the biggest signs of advanced emotional intelligence is being unable to fully hate or dislike someone because you understand the reasons behind their behavior. That’s called *cognitive empathy* — when you don’t just see what they did, you understand why they did it.\n\nAnd that’s a gift, but sometimes it also feels like a curse. Because when you’ve trained yourself to understand people, you can’t unsee their pain, even when they hurt you. You know the childhood wound behind the sarcasm. You know the fear behind the distance. You know the self-hate behind the betrayal.\n\nAnd now you’re stuck in the quiet war between awareness and boundaries — too aware to stay angry, but still walking around with that scar. So you just carry it, silently. And sometimes you wish someone would see you with the same level of depth you offer everyone else.\n\nBut here’s the truth: just because something makes sense doesn’t mean it gets to stay in your life. You can forgive someone’s humanity and still protect your peace. Being emotionally intelligent doesn’t mean being emotionally available to everything. You’re allowed to understand someone and still walk away.\n\n> That’s not cold. That is clarity.'
+  },
+  {
+    id: '1',
+    title: 'On Boundaries and Communication',
+    date: 'September 6, 2025',
+    content: 'If someone treats you inappropriately, you need to clearly articulate the problem and specify what exactly bothers you. At the same time, it’s important to calmly explain what will happen if such behavior continues.\n\nIt’s like at work: if you want a raise, you don’t just wait — you go and ask, while also showing your value and making it clear what the company risks losing if you leave.\n\nKeep in mind that a single incident may just mean the person was in a bad mood. But if the strange behavior repeats, then it’s time to take matters into your own hands: think carefully about what you want and **communicate it properly**.'
+  }
+];
 
 // --- TEXT PARSER ---
+// Passed isDark explicitly to guarantee readability in all environments
 const renderText = (content, isDark) => {
   if (!content) return null;
   const blocks = content.split('\n\n');
@@ -18,6 +52,7 @@ const renderText = (content, isDark) => {
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>');
 
+    // Handle blockquotes
     if (block.startsWith('> ')) {
       html = html.substring(2);
       return (
@@ -30,6 +65,7 @@ const renderText = (content, isDark) => {
       );
     }
 
+    // Handle regular paragraphs
     return (
       <p 
         key={index} 
@@ -42,97 +78,30 @@ const renderText = (content, isDark) => {
 
 export default function App() {
   // --- STATE ---
-  const [articles, setArticles] = useState([]); // Now starts completely empty!
-  const [isLoading, setIsLoading] = useState(true);
+  const [articles, setArticles] = useState(INITIAL_ARTICLES);
   const [view, setView] = useState('home'); 
   const [activeArticleId, setActiveArticleId] = useState(null);
   const [isDark, setIsDark] = useState(false);
   
+  // Auth & Admin state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState(false);
 
+  // Editor state
   const [editorTitle, setEditorTitle] = useState('');
   const [editorContent, setEditorContent] = useState('');
 
   // --- EFFECTS ---
+  // Load Google Fonts dynamically
   useEffect(() => {
-    // Load Fonts
     const link = document.createElement('link');
     link.href = 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-
-    // Fetch Articles from Database on Load
-    fetchArticles();
-
     return () => document.head.removeChild(link);
   }, []);
-
-  // --- DATABASE FUNCTIONS ---
-  const fetchArticles = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false }); // Newest first
-    
-    if (error) {
-      console.error("Error fetching articles:", error);
-    } else {
-      setArticles(data);
-    }
-    setIsLoading(false);
-  };
-
-  const saveArticle = async () => {
-    if (!editorTitle.trim() || !editorContent.trim()) {
-      alert("Title and content cannot be empty.");
-      return;
-    }
-
-    const today = new Date().toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-
-    if (activeArticleId) {
-      // UPDATE EXISTING ARTICLE
-      const { error } = await supabase
-        .from('articles')
-        .update({ title: editorTitle, content: editorContent })
-        .eq('id', activeArticleId);
-        
-      if (error) console.error("Error updating:", error);
-    } else {
-      // INSERT NEW ARTICLE
-      const { error } = await supabase
-        .from('articles')
-        .insert([{ title: editorTitle, content: editorContent, date: today }]);
-        
-      if (error) console.error("Error inserting:", error);
-    }
-
-    await fetchArticles(); // Refresh the list from the database
-    setView('admin');
-  };
-
-  const deleteArticle = async (id) => {
-    if (window.confirm("Are you sure you want to delete this piece?")) {
-      const { error } = await supabase
-        .from('articles')
-        .delete()
-        .eq('id', id);
-        
-      if (error) {
-        console.error("Error deleting:", error);
-      } else {
-        setArticles(articles.filter(a => a.id !== id));
-      }
-    }
-  };
 
   // --- HANDLERS ---
   const handleLogin = (e) => {
@@ -176,6 +145,42 @@ export default function App() {
     }
   };
 
+  const deleteArticle = (id) => {
+    if (window.confirm("Are you sure you want to delete this piece?")) {
+      setArticles(articles.filter(a => a.id !== id));
+    }
+  };
+
+  const saveArticle = () => {
+    if (!editorTitle.trim() || !editorContent.trim()) {
+      alert("Title and content cannot be empty.");
+      return;
+    }
+
+    const today = new Date().toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    if (activeArticleId) {
+      setArticles(articles.map(a => 
+        a.id === activeArticleId 
+          ? { ...a, title: editorTitle, content: editorContent }
+          : a
+      ));
+    } else {
+      const newArticle = {
+        id: Date.now().toString(),
+        title: editorTitle,
+        content: editorContent,
+        date: today
+      };
+      setArticles([newArticle, ...articles]);
+    }
+    setView('admin');
+  };
+
   const activeArticle = articles.find(a => a.id === activeArticleId);
 
   // --- RENDERERS ---
@@ -199,14 +204,15 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex flex-col items-end cursor-pointer group" onClick={() => {setView('home'); fetchArticles();}}>
+        {/* Updated Title Block */}
+        <div className="flex flex-col items-center cursor-pointer group" onClick={() => {setView('home'); fetchArticles();}}>
           <h1 
-            className="text-5xl md:text-7xl font-black tracking-tight group-hover:opacity-90 transition-opacity"
+            className="text-5xl md:text-7xl font-black text-center tracking-tight group-hover:opacity-90 transition-opacity"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             The Chronically
           </h1>
-          <span className={`text-xs md:text-sm font-sans tracking-widest mt-2 uppercase ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          <span className={`text-xs md:text-sm font-sans tracking-widest mt-2 uppercase self-end ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             by NISFALDAM
           </span>
         </div>
@@ -221,28 +227,22 @@ export default function App() {
         {/* VIEW: HOME (Article List) */}
         {view === 'home' && (
           <div className="space-y-20 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {isLoading ? (
-              <p className="text-center italic opacity-50 mt-20">Loading archive...</p>
-            ) : articles.length === 0 ? (
-              <p className="text-center italic opacity-50 mt-20">No entries yet. Unlock the restricted area to publish.</p>
-            ) : (
-              articles.map(article => (
-                <article key={article.id} className="group cursor-pointer" onClick={() => openArticle(article.id)}>
-                  <p className={`text-sm uppercase tracking-widest mb-4 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {article.date}
-                  </p>
-                  <h2 
-                    className={`text-3xl md:text-4xl font-bold mb-5 group-hover:opacity-70 transition-opacity leading-tight ${isDark ? 'text-white' : 'text-black'}`}
-                    style={{ fontFamily: "'Playfair Display', serif" }}
-                  >
-                    {article.title}
-                  </h2>
-                  <p className={`text-lg leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {article.content.replace(/[*|>]/g, '').substring(0, 220)}...
-                  </p>
-                </article>
-              ))
-            )}
+            {articles.map(article => (
+              <article key={article.id} className="group cursor-pointer" onClick={() => openArticle(article.id)}>
+                <p className={`text-sm uppercase tracking-widest mb-4 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {article.date}
+                </p>
+                <h2 
+                  className={`text-3xl md:text-4xl font-bold mb-5 group-hover:opacity-70 transition-opacity leading-tight ${isDark ? 'text-white' : 'text-black'}`}
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  {article.title}
+                </h2>
+                <p className={`text-lg leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {article.content.replace(/[*|>]/g, '').substring(0, 220)}...
+                </p>
+              </article>
+            ))}
           </div>
         )}
 
@@ -270,6 +270,7 @@ export default function App() {
             </header>
             
             <div className="article-body max-w-2xl mx-auto">
+              {/* Passed the isDark state to the text renderer here */}
               {renderText(activeArticle.content, isDark)}
             </div>
           </article>
@@ -375,6 +376,7 @@ export default function App() {
           © 2026 BY NISFALDAM.
         </p>
         
+        {/* The Secret Button - Bottom Right */}
         {!isAuthenticated && (
           <button 
             onClick={() => setShowLoginModal(true)}
