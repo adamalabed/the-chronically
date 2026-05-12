@@ -3,10 +3,58 @@ import { Moon, Sun, Edit3, Trash2, Plus, ArrowLeft, Lock, LogOut } from 'lucide-
 import { createClient } from '@supabase/supabase-js';
 
 // --- SUPABASE CONNECTION ---
-// Pulls your environment variables to securely connect to your database
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const UI_TEXT = {
+  en: {
+    by: "by",
+    admin: "Admin",
+    back: "Back",
+    publishedOn: "Published on",
+    editorsDesk: "Editor's Desk",
+    newEntry: "New Entry",
+    cancel: "Cancel",
+    headline: "Headline...",
+    categoriesLabel: "Categories",
+    fmtGuide: "Formatting guide:",
+    fmtDesc: "Use **text** for bold, *text* for italic, and start a paragraph with > for a beautifully styled blockquote.",
+    writeHere: "Write your entry here...",
+    publish: "Publish Entry",
+    restricted: "Restricted Area",
+    passcode: "Passcode",
+    incorrect: "Incorrect passcode.",
+    unlock: "Unlock",
+    deletePrompt: "Are you sure you want to delete this piece?"
+  },
+  ru: {
+    by: "от",
+    admin: "Админ",
+    back: "Назад",
+    publishedOn: "Опубликовано",
+    editorsDesk: "Стол редактора",
+    newEntry: "Новая запись",
+    cancel: "Отмена",
+    headline: "Заголовок...",
+    categoriesLabel: "Категории",
+    fmtGuide: "Форматирование:",
+    fmtDesc: "Используйте **текст** для жирного, *текст* для курсива, и начинайте абзац с > для цитаты.",
+    writeHere: "Напишите вашу запись здесь...",
+    publish: "Опубликовать",
+    restricted: "Закрытая зона",
+    passcode: "Код доступа",
+    incorrect: "Неверный код.",
+    unlock: "Войти",
+    deletePrompt: "Вы уверены, что хотите удалить эту запись?"
+  }
+};
+
+const AVAILABLE_CATEGORIES = [
+  'Philosophy', 'Psychology', 'Life', 'Productivity', 
+  'Self-Improvement', 'Relationships', 'Communication', 
+  'Music', 'Art', 'Culture'
+];
 
 // --- TEXT PARSER ---
 const renderText = (content, isDark) => {
@@ -44,11 +92,12 @@ const renderText = (content, isDark) => {
 
 export default function App() {
   // --- STATE ---
-  const [articles, setArticles] = useState([]); // Starts empty, waits for database
+  const [articles, setArticles] = useState([]); // Starts empty, awaits Supabase
   const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState('home'); 
   const [activeArticleId, setActiveArticleId] = useState(null);
   const [isDark, setIsDark] = useState(false);
+  const [lang, setLang] = useState('en');
   
   // Auth & Admin state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,13 +107,14 @@ export default function App() {
 
   // Editor state
   const [editorTitle, setEditorTitle] = useState('');
+  const [editorCategories, setEditorCategories] = useState([]);
   const [editorContent, setEditorContent] = useState('');
 
   // --- EFFECTS ---
   useEffect(() => {
     // Load Google Fonts dynamically
     const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Amarante&family=Ballet&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
     
@@ -80,7 +130,7 @@ export default function App() {
     const { data, error } = await supabase
       .from('articles')
       .select('*')
-      .order('created_at', { ascending: false }); // Ensures newest are at the top
+      .order('created_at', { ascending: false }); // Prioritizes newest
     
     if (error) {
       console.error("Error fetching articles:", error);
@@ -91,7 +141,7 @@ export default function App() {
   };
 
   const deleteArticle = async (id) => {
-    if (window.confirm("Are you sure you want to delete this piece?")) {
+    if (window.confirm(UI_TEXT[lang].deletePrompt)) {
       const { error } = await supabase
         .from('articles')
         .delete()
@@ -101,7 +151,6 @@ export default function App() {
         console.error("Error deleting article:", error);
         alert("Failed to delete article. Please try again.");
       } else {
-        // Remove it from the local screen so we don't have to refresh
         setArticles(articles.filter(a => a.id !== id));
       }
     }
@@ -120,10 +169,14 @@ export default function App() {
     });
 
     if (activeArticleId) {
-      // UPDATE existing article in Supabase
+      // UPDATE
       const { error } = await supabase
         .from('articles')
-        .update({ title: editorTitle, content: editorContent })
+        .update({ 
+          title: editorTitle, 
+          categories: editorCategories,
+          content: editorContent 
+        })
         .eq('id', activeArticleId);
         
       if (error) {
@@ -132,10 +185,15 @@ export default function App() {
         return;
       }
     } else {
-      // INSERT new article into Supabase
+      // INSERT
       const { error } = await supabase
         .from('articles')
-        .insert([{ title: editorTitle, content: editorContent, date: today }]);
+        .insert([{ 
+          title: editorTitle, 
+          categories: editorCategories,
+          content: editorContent, 
+          date: today 
+        }]);
         
       if (error) {
         console.error("Error saving new article:", error);
@@ -144,7 +202,7 @@ export default function App() {
       }
     }
 
-    // Refresh the list to get the new data and close the editor
+    // Refresh data and redirect back to admin view
     await fetchArticles();
     setView('admin');
   };
@@ -177,6 +235,7 @@ export default function App() {
   const createNewArticle = () => {
     setActiveArticleId(null);
     setEditorTitle('');
+    setEditorCategories([]);
     setEditorContent('');
     setView('editor');
   };
@@ -186,6 +245,7 @@ export default function App() {
     if (article) {
       setActiveArticleId(article.id);
       setEditorTitle(article.title);
+      setEditorCategories(article.categories || []);
       setEditorContent(article.content);
       setView('editor');
     }
@@ -202,32 +262,22 @@ export default function App() {
         <div className="absolute top-8 right-6 flex items-center space-x-4">
           {isAuthenticated && (
             <button onClick={() => setView('admin')} className="text-sm uppercase tracking-widest hover:opacity-70 transition-opacity font-sans">
-              Admin
+              {UI_TEXT[lang].admin}
             </button>
           )}
-          <button 
-            onClick={() => setIsDark(!isDark)}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            aria-label="Toggle Dark Mode"
-          >
-            {isDark ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
-          </button>
         </div>
 
+        {/* Updated Title Block */}
         <div className="flex flex-col items-center cursor-pointer group" onClick={() => {setView('home'); fetchArticles();}}>
           <h1 
-            className="text-5xl md:text-7xl font-black text-center tracking-tight group-hover:opacity-90 transition-opacity"
-            style={{ fontFamily: "'Playfair Display', serif" }}
+            className="text-4xl sm:text-5xl md:text-7xl font-black text-center tracking-tight group-hover:opacity-90 transition-opacity"
+            style={{ fontFamily: "'Amarante', serif" }}
           >
             The Chronically
           </h1>
-          <span className={`text-xs md:text-sm font-sans tracking-widest mt-2 uppercase self-end ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-            by NISFALDAM
-          </span>
         </div>
 
         <div className={`w-full h-[1px] mt-10 ${isDark ? 'bg-gray-800' : 'bg-gray-300'}`} />
-        <div className={`w-full h-[2px] mt-1 ${isDark ? 'bg-gray-800' : 'bg-gray-300'}`} />
       </header>
 
       {/* Main Content Area */}
@@ -235,7 +285,7 @@ export default function App() {
         
         {/* VIEW: HOME (Article List) */}
         {view === 'home' && (
-          <div className="space-y-20 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="space-y-16 sm:space-y-20 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {isLoading ? (
               <p className="text-center italic opacity-50 mt-20">Loading archive...</p>
             ) : articles.length === 0 ? (
@@ -243,16 +293,16 @@ export default function App() {
             ) : (
               articles.map(article => (
                 <article key={article.id} className="group cursor-pointer" onClick={() => openArticle(article.id)}>
-                  <p className={`text-sm uppercase tracking-widest mb-4 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {article.date}
+                  <p className={`text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {article.date}{article.categories && article.categories.length > 0 ? ` / ${article.categories.join(', ')}` : ''}
                   </p>
                   <h2 
-                    className={`text-3xl md:text-4xl font-bold mb-5 group-hover:opacity-70 transition-opacity leading-tight ${isDark ? 'text-white' : 'text-black'}`}
+                    className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 group-hover:opacity-70 transition-opacity leading-tight ${isDark ? 'text-white' : 'text-black'}`}
                     style={{ fontFamily: "'Playfair Display', serif" }}
                   >
                     {article.title}
                   </h2>
-                  <p className={`text-lg leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-base sm:text-lg leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     {article.content.replace(/[*|>]/g, '').substring(0, 220)}...
                   </p>
                 </article>
@@ -266,17 +316,17 @@ export default function App() {
           <article className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <button 
               onClick={() => setView('home')}
-              className="flex items-center text-sm uppercase tracking-widest mb-16 opacity-60 hover:opacity-100 transition-opacity font-sans"
+              className="flex items-center text-sm uppercase tracking-widest mb-12 sm:mb-16 opacity-60 hover:opacity-100 transition-opacity font-sans"
             >
-              <ArrowLeft size={16} className="mr-2" /> Back
+              <ArrowLeft size={16} className="mr-2" /> {UI_TEXT[lang].back}
             </button>
             
-            <header className="mb-14 text-center">
-              <p className={`text-sm uppercase tracking-widest mb-6 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Published on {activeArticle.date}
+            <header className="mb-10 sm:mb-14 text-center">
+              <p className={`text-xs sm:text-sm uppercase tracking-widest mb-4 sm:mb-6 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {UI_TEXT[lang].publishedOn} {activeArticle.date}{activeArticle.categories && activeArticle.categories.length > 0 ? ` / ${activeArticle.categories.join(', ')}` : ''}
               </p>
               <h1 
-                className={`text-4xl md:text-6xl font-bold leading-tight mb-10 ${isDark ? 'text-white' : 'text-black'}`}
+                className={`text-3xl sm:text-4xl md:text-6xl font-bold leading-tight mb-8 sm:mb-10 ${isDark ? 'text-white' : 'text-black'}`}
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 {activeArticle.title}
@@ -294,17 +344,17 @@ export default function App() {
         {view === 'admin' && isAuthenticated && (
           <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className={`flex justify-between items-center mb-12 border-b pb-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-              <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>Editor's Desk</h2>
-              <div className="flex space-x-4">
+              <h2 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>{UI_TEXT[lang].editorsDesk}</h2>
+              <div className="flex space-x-2 sm:space-x-4">
                 <button 
                   onClick={createNewArticle}
-                  className={`flex items-center px-5 py-2.5 rounded font-sans text-sm font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                  className={`flex items-center px-4 sm:px-5 py-2 sm:py-2.5 rounded font-sans text-xs sm:text-sm font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
-                  <Plus size={16} className="mr-2" /> New Entry
+                  <Plus size={16} className="mr-1 sm:mr-2" /> {UI_TEXT[lang].newEntry}
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className={`p-2.5 rounded border transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-100'}`}
+                  className={`p-2 sm:p-2.5 rounded border transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-100'}`}
                   title="Log out"
                 >
                   <LogOut size={18} />
@@ -314,22 +364,22 @@ export default function App() {
 
             <div className="space-y-4">
               {articles.map(article => (
-                <div key={article.id} className={`p-6 rounded-lg flex justify-between items-center border transition-colors ${isDark ? 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                  <div>
-                    <h3 className="text-xl font-bold font-serif mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>{article.title}</h3>
-                    <p className={`text-sm font-sans uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{article.date}</p>
+                <div key={article.id} className={`p-4 sm:p-6 rounded-lg flex justify-between items-center border transition-colors ${isDark ? 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                  <div className="pr-4">
+                    <h3 className="text-lg sm:text-xl font-bold font-serif mb-1 sm:mb-2 line-clamp-1" style={{ fontFamily: "'Playfair Display', serif" }}>{article.title}</h3>
+                    <p className={`text-xs sm:text-sm font-sans uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{article.date}</p>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1 sm:space-x-2 shrink-0">
                     <button 
                       onClick={() => editArticle(article.id)}
-                      className={`p-3 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-500 hover:text-black hover:bg-gray-100'}`}
+                      className={`p-2 sm:p-3 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-500 hover:text-black hover:bg-gray-100'}`}
                       title="Edit"
                     >
                       <Edit3 size={18} />
                     </button>
                     <button 
                       onClick={() => deleteArticle(article.id)}
-                      className={`p-3 rounded-full transition-colors ${isDark ? 'text-red-400 hover:text-red-300 hover:bg-red-900/30' : 'text-red-400 hover:text-red-600 hover:bg-red-50'}`}
+                      className={`p-2 sm:p-3 rounded-full transition-colors ${isDark ? 'text-red-400 hover:text-red-300 hover:bg-red-900/30' : 'text-red-400 hover:text-red-600 hover:bg-red-50'}`}
                       title="Delete"
                     >
                       <Trash2 size={18} />
@@ -348,35 +398,62 @@ export default function App() {
               onClick={() => setView('admin')}
               className="flex items-center text-sm uppercase tracking-widest mb-10 opacity-60 hover:opacity-100 transition-opacity font-sans"
             >
-              <ArrowLeft size={16} className="mr-2" /> Cancel
+              <ArrowLeft size={16} className="mr-2" /> {UI_TEXT[lang].cancel}
             </button>
 
             <input
               type="text"
-              placeholder="Headline..."
+              placeholder={UI_TEXT[lang].headline}
               value={editorTitle}
               onChange={(e) => setEditorTitle(e.target.value)}
-              className={`w-full text-4xl md:text-5xl font-bold mb-8 bg-transparent border-none outline-none placeholder-opacity-30 placeholder-gray-500`}
+              className={`w-full text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-transparent border-none outline-none placeholder-opacity-30 placeholder-gray-500`}
               style={{ fontFamily: "'Playfair Display', serif" }}
             />
             
-            <div className={`mb-8 p-5 rounded border text-sm font-sans ${isDark ? 'bg-[#1A1A1A] border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-              <strong>Formatting guide:</strong> Use <code>**text**</code> for bold, <code>*text*</code> for italic, and start a paragraph with <code>&gt; </code> for a beautifully styled blockquote.
+            <div className="mb-8">
+              <p className={`text-xs sm:text-sm uppercase tracking-widest mb-3 font-sans font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {UI_TEXT[lang].categoriesLabel}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {AVAILABLE_CATEGORIES.map(cat => {
+                  const isSelected = editorCategories.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        if (isSelected) setEditorCategories(editorCategories.filter(c => c !== cat));
+                        else setEditorCategories([...editorCategories, cat]);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-sans tracking-wide transition-colors border ${
+                        isSelected 
+                          ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black') 
+                          : (isDark ? 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500' : 'bg-transparent text-gray-500 border-gray-300 hover:border-gray-400')
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={`mb-8 p-4 sm:p-5 rounded border text-xs sm:text-sm font-sans ${isDark ? 'bg-[#1A1A1A] border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+              <strong>{UI_TEXT[lang].fmtGuide}</strong> {UI_TEXT[lang].fmtDesc}
             </div>
 
             <textarea
-              placeholder="Write your entry here..."
+              placeholder={UI_TEXT[lang].writeHere}
               value={editorContent}
               onChange={(e) => setEditorContent(e.target.value)}
-              className={`w-full h-[60vh] bg-transparent border-none outline-none text-xl leading-relaxed resize-none placeholder-opacity-30 placeholder-gray-500 font-serif`}
+              className={`w-full h-[50vh] sm:h-[60vh] bg-transparent border-none outline-none text-lg sm:text-xl leading-relaxed resize-none placeholder-opacity-30 placeholder-gray-500 font-serif`}
             />
 
             <div className={`flex justify-end mt-8 border-t pt-8 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
               <button 
                 onClick={saveArticle}
-                className={`px-8 py-3.5 rounded font-sans font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                className={`px-6 sm:px-8 py-3 sm:py-3.5 rounded font-sans text-sm sm:text-base font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
               >
-                Publish Entry
+                {UI_TEXT[lang].publish}
               </button>
             </div>
           </div>
@@ -385,10 +462,39 @@ export default function App() {
       </main>
 
       {/* Footer & Secret Access */}
-      <footer className={`max-w-4xl mx-auto px-6 py-16 text-center relative border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-        <p className={`text-sm font-sans tracking-widest uppercase ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-          © 2026 BY NISFALDAM.
-        </p>
+      <footer className={`max-w-4xl mx-auto px-6 py-12 sm:py-16 text-center relative border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+        
+        {/* Toggle Controls (Theme & Lang) */}
+        <div className="flex justify-center items-center space-x-4 mb-6 text-sm font-sans tracking-widest uppercase">
+          <button 
+            onClick={() => setIsDark(!isDark)}
+            className={`transition-all duration-300 hover:opacity-70 ${isDark ? 'text-white' : 'text-black'}`}
+            aria-label="Toggle Dark Mode"
+          >
+            {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+          </button>
+          
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+
+          <button 
+            onClick={() => setLang('en')} 
+            className={`transition-all duration-300 ${lang === 'en' ? (isDark ? 'text-white font-bold' : 'text-black font-bold') : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+          >
+            EN
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button 
+            onClick={() => setLang('ru')} 
+            className={`transition-all duration-300 ${lang === 'ru' ? (isDark ? 'text-white font-bold' : 'text-black font-bold') : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+          >
+            RU
+          </button>
+        </div>
+
+        <div className={`flex justify-center items-center gap-2 text-xs sm:text-sm font-sans tracking-widest uppercase ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          <span>© 2026 {UI_TEXT[lang].by}</span>
+          <span style={{ fontFamily: "'Ballet', cursive", fontSize: '1.5rem', textTransform: 'none', letterSpacing: 'normal' }}>Nisfaldam</span>
+        </div>
         
         {/* The Secret Button - Bottom Right */}
         {!isAuthenticated && (
@@ -406,32 +512,32 @@ export default function App() {
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
           <div className={`w-full max-w-sm p-8 rounded shadow-2xl animate-in zoom-in-95 ${isDark ? 'bg-[#121212] border border-gray-800' : 'bg-white'}`}>
-            <h3 className="text-3xl font-bold mb-8 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Restricted Area
+            <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {UI_TEXT[lang].restricted}
             </h3>
             <form onSubmit={handleLogin}>
               <input 
                 type="password" 
-                placeholder="Passcode" 
+                placeholder={UI_TEXT[lang].passcode}
                 autoFocus
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className={`w-full p-4 mb-6 rounded font-sans border outline-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all text-center tracking-widest ${isDark ? 'bg-[#1A1A1A] border-gray-800 text-white' : 'bg-gray-50 border-gray-200'}`}
+                className={`w-full p-3 sm:p-4 mb-6 rounded font-sans border outline-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all text-center tracking-widest ${isDark ? 'bg-[#1A1A1A] border-gray-800 text-white' : 'bg-gray-50 border-gray-200'}`}
               />
-              {loginError && <p className="text-red-500 text-sm mb-6 font-sans text-center">Incorrect passcode.</p>}
+              {loginError && <p className="text-red-500 text-sm mb-6 font-sans text-center">{UI_TEXT[lang].incorrect}</p>}
               <div className="flex space-x-3">
                 <button 
                   type="button" 
                   onClick={() => {setShowLoginModal(false); setLoginError(false); setPasswordInput('');}}
-                  className={`flex-1 p-3.5 rounded font-sans font-medium transition-colors ${isDark ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}
+                  className={`flex-1 p-3 sm:p-3.5 rounded font-sans text-sm sm:text-base font-medium transition-colors ${isDark ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}
                 >
-                  Cancel
+                  {UI_TEXT[lang].cancel}
                 </button>
                 <button 
                   type="submit"
-                  className={`flex-1 p-3.5 rounded font-sans font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                  className={`flex-1 p-3 sm:p-3.5 rounded font-sans text-sm sm:text-base font-medium transition-colors ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
-                  Unlock
+                  {UI_TEXT[lang].unlock}
                 </button>
               </div>
             </form>
